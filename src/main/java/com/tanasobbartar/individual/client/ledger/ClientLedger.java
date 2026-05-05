@@ -1,7 +1,7 @@
-package ir.fathi.individual.client.ledger;
+package com.tanasobbartar.individual.client.ledger;
 
-import ir.fathi.constants.AuditableEntity;
-import ir.fathi.enrollment.Enrollment;
+import com.tanasobbartar.constants.AuditableEntity;
+import com.tanasobbartar.enrollment.Enrollment;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;

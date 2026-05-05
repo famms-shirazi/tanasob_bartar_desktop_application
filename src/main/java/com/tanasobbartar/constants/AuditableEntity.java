@@ -1,4 +1,4 @@
-package ir.fathi.constants;
+package com.tanasobbartar.constants;
 
 import jakarta.persistence.*;
 import lombok.Getter;

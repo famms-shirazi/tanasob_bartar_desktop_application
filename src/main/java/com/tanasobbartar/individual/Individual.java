@@ -1,6 +1,6 @@
-package ir.fathi.individual;
+package com.tanasobbartar.individual;
 
-import ir.fathi.constants.AuditableEntity;
+import com.tanasobbartar.constants.AuditableEntity;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

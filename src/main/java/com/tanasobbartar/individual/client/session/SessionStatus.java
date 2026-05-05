@@ -1,10 +1,13 @@
-package ir.fathi.individual.client.session;
+package com.tanasobbartar.individual.client.session;
 
-import ir.fathi.constants.AuditableEntity;
-import ir.fathi.enrollment.Enrollment;
-import ir.fathi.individual.client.Client;
-import ir.fathi.individual.coach.Coach;
-import jakarta.persistence.*;
+import com.tanasobbartar.constants.AuditableEntity;
+import com.tanasobbartar.enrollment.Enrollment;
+import com.tanasobbartar.individual.client.Client;
+import com.tanasobbartar.individual.coach.Coach;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.Setter;
 

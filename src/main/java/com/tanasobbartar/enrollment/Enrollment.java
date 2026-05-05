@@ -1,9 +1,12 @@
-package ir.fathi.enrollment;
+package com.tanasobbartar.enrollment;
 
-import ir.fathi.constants.AuditableEntity;
-import ir.fathi.individual.client.Client;
-import ir.fathi.individual.coach.Coach;
-import jakarta.persistence.*;
+import com.tanasobbartar.constants.AuditableEntity;
+import com.tanasobbartar.individual.client.Client;
+import com.tanasobbartar.individual.coach.Coach;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;

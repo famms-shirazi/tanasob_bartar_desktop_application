@@ -1,4 +1,4 @@
-package ir.fathi.individual.client.attendance;
+package com.tanasobbartar.individual.client.attendance;
 
 public enum AttendanceStatus {
     PRESENT,

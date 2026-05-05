@@ -1,4 +1,4 @@
-package ir.fathi.individual;
+package com.tanasobbartar.individual;
 
 public enum GenderType {
     MALE,

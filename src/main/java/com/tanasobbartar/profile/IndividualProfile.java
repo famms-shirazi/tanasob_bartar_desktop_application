@@ -1,7 +1,8 @@
-package ir.fathi.profile;
+package com.tanasobbartar.profile;
 
-import ir.fathi.constants.AuditableEntity;
-import ir.fathi.individual.client.Client;
+
+import com.tanasobbartar.constants.AuditableEntity;
+import com.tanasobbartar.individual.client.Client;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;

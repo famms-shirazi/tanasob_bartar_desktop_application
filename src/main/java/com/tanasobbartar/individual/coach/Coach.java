@@ -1,6 +1,6 @@
-package ir.fathi.individual.coach;
+package com.tanasobbartar.individual.coach;
 
-import ir.fathi.individual.Individual;
+import com.tanasobbartar.individual.Individual;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import lombok.Getter;

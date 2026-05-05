@@ -1,4 +1,4 @@
-package ir.fathi.individual.client.ledger;
+package com.tanasobbartar.individual.client.ledger;
 
 public enum PaymentMethod {
     CARD_TO_CARD,

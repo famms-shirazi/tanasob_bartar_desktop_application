@@ -1,8 +1,7 @@
-package ir.fathi.individual.client;
+package com.tanasobbartar.individual.client;
 
-import ir.fathi.constants.AuditableEntity;
-import ir.fathi.individual.Individual;
-import ir.fathi.profile.IndividualProfile;
+import com.tanasobbartar.individual.Individual;
+import com.tanasobbartar.profile.IndividualProfile;
 import jakarta.persistence.Entity;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
