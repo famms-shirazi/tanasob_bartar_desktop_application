@@ -10,7 +10,7 @@ import java.util.Optional;
 public interface ClientLedgerRepository extends JpaRepository<ClientLedger, Long> {
 
     @Query("""
-            FROM ClientLedger cl
+            SELECT cl FROM ClientLedger cl
             JOIN cl.enrollment e
             WHERE e.client.id = :clientId
             ORDER BY cl.createdAt DESC

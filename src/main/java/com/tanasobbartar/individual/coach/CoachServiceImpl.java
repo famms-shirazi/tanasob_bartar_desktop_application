@@ -1,4 +1,4 @@
-package ir.fathi.individual.coach;
+package com.tanasobbartar.individual.coach;
 
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;

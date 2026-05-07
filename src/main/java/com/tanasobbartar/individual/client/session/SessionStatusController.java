@@ -1,4 +1,4 @@
-package ir.fathi.individual.client.session;
+package com.tanasobbartar.individual.client.session;
 
 import lombok.AllArgsConstructor;
 import org.springframework.web.bind.annotation.RequestMapping;

@@ -1,4 +1,4 @@
-package ir.fathi.individual.client.ledger;
+package com.tanasobbartar.individual.client.ledger;
 
 import lombok.AllArgsConstructor;
 import net.sf.jasperreports.engine.JRException;
@@ -24,11 +24,6 @@ public class ClientLedgerController {
     public ResponseEntity<ClientLedgerDto> addClientAttendance(@RequestBody NewClientLedgerDto clientLedgerDto) {
         ClientLedgerDto savedClientLedgerDto = clientPaymentService.saveClientPaymentDto(clientLedgerDto);
         return ResponseEntity.created(URI.create("/client-payments/" + savedClientLedgerDto.getId())).body(savedClientLedgerDto);
-    }
-
-    @PostMapping("/report")
-    public void addClientAttendance(@RequestBody NewClientLedgerReportDto clientLedgerReportDto) throws JRException, SQLException {
-        clientPaymentService.generateExcelReport(clientLedgerReportDto);
     }
 
 }

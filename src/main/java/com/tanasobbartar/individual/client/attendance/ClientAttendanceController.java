@@ -1,4 +1,4 @@
-package ir.fathi.individual.client.attendance;
+package com.tanasobbartar.individual.client.attendance;
 
 import lombok.AllArgsConstructor;
 import net.sf.jasperreports.engine.JRException;
@@ -42,11 +42,6 @@ public class ClientAttendanceController {
         List<ClientAttendanceDto> clientAttendanceStatus =
                 clientAttendanceService.findClientAttendanceStatus(clientId, coachId, enrollmentId, startDate, endDate);
         return ResponseEntity.ok(clientAttendanceStatus);
-    }
-
-    @PostMapping("/report")
-    public void generateReport(@RequestBody NewClientAttendanceReportDto clientAttendanceReportDto) throws JRException, SQLException {
-         clientAttendanceService.generateExcelReport(clientAttendanceReportDto);
     }
 
     @PostMapping("check-out-time/{clientAttendanceId}")

@@ -1,4 +1,4 @@
-package ir.fathi.enrollment;
+package com.tanasobbartar.enrollment;
 
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;

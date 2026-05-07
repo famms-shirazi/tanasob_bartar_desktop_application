@@ -2,11 +2,12 @@ package com.tanasobbartar.enrollment;
 
 import lombok.Builder;
 import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonPOJOBuilder;
 
 @Value
 @Builder
-@Jacksonized
+@JsonDeserialize(builder = NewEnrollmentDto.NewEnrollmentDtoBuilder.class)
 public class NewEnrollmentDto {
 
     Integer sessionCount;
@@ -15,5 +16,9 @@ public class NewEnrollmentDto {
     Integer registrationFee;
     Integer coachPercentage;
     Integer centerPercentage;
+
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class NewEnrollmentDtoBuilder {
+    }
 
 }

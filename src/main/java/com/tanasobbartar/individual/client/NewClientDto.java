@@ -3,13 +3,14 @@ package com.tanasobbartar.individual.client;
 import com.tanasobbartar.individual.GenderType;
 import lombok.Builder;
 import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
+import tools.jackson.databind.annotation.JsonDeserialize;
+import tools.jackson.databind.annotation.JsonPOJOBuilder;
 
 import java.time.LocalDate;
 
 @Value
 @Builder
-@Jacksonized
+@JsonDeserialize(builder = NewClientDto.NewClientDtoBuilder.class)
 public class NewClientDto {
 
     String firstName;
@@ -18,5 +19,9 @@ public class NewClientDto {
     String username;
     GenderType genderType;
     LocalDate birthdate;
+
+    @JsonPOJOBuilder(withPrefix = "")
+    public static class NewClientDtoBuilder {
+    }
 
 }

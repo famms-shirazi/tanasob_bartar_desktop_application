@@ -1,4 +1,4 @@
-package ir.fathi.individual.client;
+package com.tanasobbartar.individual.client;
 
 import lombok.AllArgsConstructor;
 import org.springframework.http.ResponseEntity;

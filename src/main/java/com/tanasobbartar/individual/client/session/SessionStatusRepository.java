@@ -13,14 +13,14 @@ public interface SessionStatusRepository extends JpaRepository<SessionStatus, Lo
     Optional<SessionStatus> findSessionStatusById(Long id);
 
     @Query("""
-            FROM SessionStatus s
+            SELECT s FROM SessionStatus s
             JOIN s.enrollment e
             WHERE e.id = :enrollmentId
             AND s.sessionsCount >= 0""")
     SessionStatus findSessionStatusByCreditableClient(Long enrollmentId);
 
     @Query("""
-            FROM SessionStatus s
+            SELECT s FROM SessionStatus s
             JOIN FETCH s.enrollment e
             WHERE e.id = :enrollmentId
             AND s.client.id =:clientId

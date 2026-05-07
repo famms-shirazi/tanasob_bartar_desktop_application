@@ -6,14 +6,12 @@ import com.tanasobbartar.enrollment.EnrollmentRepository;
 import com.tanasobbartar.enrollment.EnrollmentService;
 import com.tanasobbartar.individual.client.Client;
 import com.tanasobbartar.individual.client.ClientRepository;
-import com.tanasobbartar.individual.client.ClientService;
 import com.tanasobbartar.individual.client.session.SessionStatus;
 import com.tanasobbartar.individual.client.session.SessionStatusDto;
 import com.tanasobbartar.individual.client.session.SessionStatusRepository;
 import com.tanasobbartar.individual.client.session.SessionStatusService;
 import com.tanasobbartar.individual.coach.Coach;
 import com.tanasobbartar.individual.coach.CoachRepository;
-import com.tanasobbartar.individual.coach.CoachService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -26,8 +24,6 @@ import java.util.List;
 public class ClientAttendanceServiceImpl implements ClientAttendanceService {
 
     private final ClientAttendanceRepository clientAttendanceRepository;
-    private final ClientService clientService;
-    private final CoachService coachService;
     private final EnrollmentService enrollmentService;
     private final SessionStatusService sessionStatusService;
     private final ClientRepository clientRepository;
