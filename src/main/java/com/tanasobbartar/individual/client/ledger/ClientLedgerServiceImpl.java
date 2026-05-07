@@ -2,6 +2,7 @@ package com.tanasobbartar.individual.client.ledger;
 
 import com.tanasobbartar.enrollment.Enrollment;
 import com.tanasobbartar.enrollment.EnrollmentRepository;
+import com.tanasobbartar.file.report.Report;
 import lombok.AllArgsConstructor;
 import net.sf.jasperreports.engine.JRException;
 import org.springframework.stereotype.Service;
@@ -10,6 +11,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.SQLException;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Date;
 import java.util.HashMap;
@@ -22,6 +24,7 @@ public class ClientLedgerServiceImpl implements ClientLedgerService {
 
     private final ClientLedgerRepository clientLedgerRepository;
     private final EnrollmentRepository enrollmentRepository;
+    private final Report report;
 
     @Override
     public ClientLedgerDto findById(Long id) {
@@ -52,6 +55,22 @@ public class ClientLedgerServiceImpl implements ClientLedgerService {
 
     private Enrollment findEnrollmentById(Long id) {
         return enrollmentRepository.findById(id).orElseThrow();
+    }
+
+    @Override
+    public void generateExcelReport(NewClientLedgerReportDto clientLedgerReportDto) throws JRException, SQLException {
+        Long coachId = clientLedgerReportDto.getCoachId();
+        LocalDateTime StartDate = clientLedgerReportDto.getStartDate();
+        Date convertedStartDate = Date.from(StartDate.atZone(ZoneId.systemDefault()).toInstant());
+        LocalDateTime EndDate = clientLedgerReportDto.getEndDate();
+        Date convertedEndDate = Date.from(EndDate.atZone(ZoneId.systemDefault()).toInstant());
+        Map<String, Object> params = new HashMap<>();
+        params.put("coach_id", coachId);
+        params.put("startDate", convertedStartDate);
+        params.put("endDate", convertedEndDate);
+        Path mainReportPath = Paths.get("src/main/resources/templates/reports/ledger/client-payment-report.jrxml");
+        Path reportStoragePath = Paths.get(clientLedgerReportDto.getReportStoragePath());
+        report.generateReport(mainReportPath, reportStoragePath, params);
     }
 
     private ClientLedger toEntity(NewClientLedgerDto clientLedgerDto, Enrollment enrollment, Integer entry) {

@@ -1,4 +1,4 @@
-package ir.fathi.exception;
+package com.tanasobbartar.exception;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

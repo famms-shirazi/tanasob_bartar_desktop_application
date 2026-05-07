@@ -26,4 +26,9 @@ public class ClientLedgerController {
         return ResponseEntity.created(URI.create("/client-payments/" + savedClientLedgerDto.getId())).body(savedClientLedgerDto);
     }
 
+    @PostMapping("/report")
+    public void generateExcelReport(@RequestBody NewClientLedgerReportDto clientLedgerReportDto) throws JRException, SQLException {
+        clientPaymentService.generateExcelReport(clientLedgerReportDto);
+    }
+
 }

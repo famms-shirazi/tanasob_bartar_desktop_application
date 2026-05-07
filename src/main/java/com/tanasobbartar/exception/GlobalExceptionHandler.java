@@ -1,4 +1,4 @@
-package ir.fathi.exception;
+package com.tanasobbartar.exception;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Autowired;

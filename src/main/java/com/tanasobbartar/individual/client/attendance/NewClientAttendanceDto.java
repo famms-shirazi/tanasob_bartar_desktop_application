@@ -11,8 +11,7 @@ import java.time.LocalTime;
 
 @Value
 @Builder
-@Jacksonized
-@JsonDeserialize(builder = NewClientAttendanceDto.NewClientAttendanceBuilderDto.class)
+@JsonDeserialize(builder = NewClientAttendanceDto.NewClientAttendanceDtoBuilder.class)
 public class NewClientAttendanceDto {
 
     AttendanceStatus status;
@@ -23,7 +22,7 @@ public class NewClientAttendanceDto {
     LocalTime checkOutTime;
 
     @JsonPOJOBuilder(withPrefix = "")
-    public static class NewClientAttendanceBuilderDto{
+    public static class NewClientAttendanceDtoBuilder{
     }
 
 }
