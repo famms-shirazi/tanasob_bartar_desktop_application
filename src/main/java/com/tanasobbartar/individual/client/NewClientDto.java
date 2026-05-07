@@ -1,6 +1,6 @@
 package com.tanasobbartar.individual.client;
 
-import ir.fathi.individual.GenderType;
+import com.tanasobbartar.individual.GenderType;
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;

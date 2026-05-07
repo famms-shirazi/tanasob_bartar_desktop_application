@@ -1,7 +1,7 @@
-package ir.fathi.individual.client.attendance;
+package com.tanasobbartar.individual.client.attendance;
 
-import ir.fathi.individual.client.Client;
-import ir.fathi.individual.coach.Coach;
+import com.tanasobbartar.individual.client.Client;
+import com.tanasobbartar.individual.coach.Coach;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

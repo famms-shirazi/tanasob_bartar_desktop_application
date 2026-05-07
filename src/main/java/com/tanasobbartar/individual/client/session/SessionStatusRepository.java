@@ -1,6 +1,6 @@
-package ir.fathi.individual.client.session;
+package com.tanasobbartar.individual.client.session;
 
-import ir.fathi.enrollment.Enrollment;
+import com.tanasobbartar.enrollment.Enrollment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;

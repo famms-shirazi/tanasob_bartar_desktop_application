@@ -1,4 +1,4 @@
-package ir.fathi.individual.client.ledger;
+package com.tanasobbartar.individual.client.ledger;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
