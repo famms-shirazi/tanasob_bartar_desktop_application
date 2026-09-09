@@ -23,7 +23,7 @@ public class ClientLedgerController {
     @PostMapping("/add")
     public ResponseEntity<ClientLedgerDto> addClientAttendance(@RequestBody NewClientLedgerDto clientLedgerDto) {
         ClientLedgerDto savedClientLedgerDto = clientPaymentService.saveClientPaymentDto(clientLedgerDto);
-        return ResponseEntity.created(URI.create("/client-payments/" + savedClientLedgerDto.getId())).body(savedClientLedgerDto);
+        return ResponseEntity.created(URI.create("/client-ledgers/" + savedClientLedgerDto.getId())).body(savedClientLedgerDto);
     }
 
     @PostMapping("/report")

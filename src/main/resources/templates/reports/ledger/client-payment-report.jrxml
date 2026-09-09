@@ -1,594 +1,786 @@
 <!-- Created with Jaspersoft Studio version 7.0.6.final using JasperReports Library version 7.0.6-5d2a603fdc6b3db8f842a83383e594f41891534d  -->
-<jasperReport name="client-payment-report" language="java" columnCount="1" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="842" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0" uuid="abd13d20-1cb3-48e4-b517-c43da5097f0e">
-	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="mySql.jrdax"/>
-	<property name="com.jaspersoft.studio.data.sql.tables" value=""/>
-	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="729"/>
-	<property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="257"/>
-	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="185"/>
-	<property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="808"/>
-	<property name="com.jaspersoft.studio.unit." value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
-	<property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
-	<parameter name="coach_id" class="java.lang.Long"/>
-	<parameter name="startDate" class="java.util.Date"/>
-	<parameter name="endDate" class="java.util.Date"/>
-	<parameter name="SUB_REPORT" class="net.sf.jasperreports.engine.JasperReport"/>
-	<query language="sql"><![CDATA[SELECT 
+<jasperReport name="client-payment-report" language="java" columnCount="1" pageWidth="842" pageHeight="595"
+              orientation="Landscape" columnWidth="842" leftMargin="0" rightMargin="0" topMargin="0" bottomMargin="0"
+              uuid="abd13d20-1cb3-48e4-b517-c43da5097f0e">
+    <property name="com.jaspersoft.studio.data.defaultdataadapter" value="mySql.jrdax"/>
+    <property name="com.jaspersoft.studio.data.sql.tables" value=""/>
+    <property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w1" value="729"/>
+    <property name="com.jaspersoft.studio.property.dataset.dialog.DatasetDialog.sash.w2" value="257"/>
+    <property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w1" value="149"/>
+    <property name="com.jaspersoft.studio.data.sql.SQLQueryDesigner.sash.w2" value="844"/>
+    <property name="com.jaspersoft.studio.unit." value="pixel"/>
+    <property name="com.jaspersoft.studio.unit.pageHeight" value="pixel"/>
+    <property name="com.jaspersoft.studio.unit.pageWidth" value="pixel"/>
+    <property name="com.jaspersoft.studio.unit.topMargin" value="pixel"/>
+    <property name="com.jaspersoft.studio.unit.bottomMargin" value="pixel"/>
+    <property name="com.jaspersoft.studio.unit.leftMargin" value="pixel"/>
+    <property name="com.jaspersoft.studio.unit.rightMargin" value="pixel"/>
+    <property name="com.jaspersoft.studio.unit.columnWidth" value="pixel"/>
+    <property name="com.jaspersoft.studio.unit.columnSpacing" value="pixel"/>
+    <parameter name="coachId" class="java.lang.Long"/>
+    <parameter name="startDate" class="java.util.Date"/>
+    <parameter name="endDate" class="java.util.Date"/>
+    <parameter name="SUB_REPORT" class="net.sf.jasperreports.engine.JasperReport"/>
+    <query language="sql"><![CDATA[WITH ledger_data AS (
+    SELECT
+        cl.id AS client_id,
+        cll.id AS ledger_id,
+        cll.balance,
+        cll.created_at,
+
+        MAX(
+            CASE
+                WHEN cll.balance = 0
+                THEN cll.created_at
+            END
+        ) OVER (
+            PARTITION BY cl.id
+        ) AS last_zero_date
+
+    FROM enrollment en
+
+    JOIN client cl
+        ON cl.id = en.client_id
+
+    JOIN clientـledger cll
+        ON cll.enrollment_id = en.id
+
+    WHERE en.coach_id = 2
+),
+
+current_ledger AS (
+    SELECT
+        client_id,
+        balance
+    FROM ledger_data
+    WHERE last_zero_date IS NULL
+       OR created_at > last_zero_date
+),
+
+client_balance AS (
+    SELECT
+        client_id,
+        SUM(balance) AS current_balance
+    FROM current_ledger
+    GROUP BY client_id
+),
+
+totals AS (
+    SELECT
+
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN current_balance < 0
+                    THEN ABS(current_balance)
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_outstanding_amount,
+
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN current_balance > 0
+                    THEN current_balance
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_credit_balance
+
+    FROM client_balance
+)
+
+SELECT
     co.first_name AS coach_first_name,
-    co.last_name  AS coach_last_name,
+    co.last_name AS coach_last_name,
+
     cli_ind.first_name AS client_first_name,
-    cli_ind.last_name  AS client_last_name,
+    cli_ind.last_name AS client_last_name,
+
     en.created_at AS enrollment_created_at,
     cll.deposit_date AS deposit_date,
+
     en.session_count AS session_count,
+
     cll.amount AS payment_amount,
     cll.payment_method AS payment_method,
+
     en.center_percentage AS center_percentage,
     en.coach_percentage AS coach_percentage,
-    CASE 
-        WHEN cll.balance > 0 THEN cll.balance 
+
+    CASE
+        WHEN cll.balance > 0
+        THEN cll.balance
     END AS credit_balance,
-    CASE 
-        WHEN cll.balance < 0 THEN cll.balance 
+
+    CASE
+        WHEN cll.balance < 0
+        THEN cll.balance
     END AS outstanding_amount,
+
     CASE
-        WHEN cll.balance > 0 AND cll.balance < cll.amount
-            THEN (en.center_percentage / 100) * (cll.amount - cll.balance)
+        WHEN cll.balance > 0
+             AND cll.balance < cll.amount
+        THEN
+            (en.center_percentage / 100.0)
+            * (cll.amount - cll.balance)
         ELSE
-            (en.center_percentage / 100) * cll.amount
+            (en.center_percentage / 100.0)
+            * cll.amount
     END AS center_share,
+
     CASE
-        WHEN cll.balance > 0 AND cll.balance < cll.amount
-            THEN (en.coach_percentage / 100) * (cll.amount - cll.balance)
+        WHEN cll.balance > 0
+             AND cll.balance < cll.amount
+        THEN
+            (en.coach_percentage / 100.0)
+            * (cll.amount - cll.balance)
         ELSE
-            (en.coach_percentage / 100) * cll.amount
-    END AS coach_commission
+            (en.coach_percentage / 100.0)
+            * cll.amount
+    END AS coach_commission,
+
+    totals.total_outstanding_amount,
+    totals.total_credit_balance
+
 FROM enrollment en
-JOIN individual co ON co.id = en.coach_id
-JOIN client cl ON cl.id = en.client_id
-JOIN individual cli_ind ON cli_ind.id = cl.id
-JOIN clientـledger cll ON cll.enrollment_id = en.id
-WHERE cll.deposit_date BETWEEN $P{startDate}
-AND $P{endDate}
-AND co.id = $P{coach_id}
-ORDER BY cl.id,cll.created_at DESC ]]></query>
-	<field name="coach_first_name" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="first_name"/>
-		<property name="com.jaspersoft.studio.field.label" value="coach_first_name"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="individual"/>
-	</field>
-	<field name="coach_last_name" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="last_name"/>
-		<property name="com.jaspersoft.studio.field.label" value="coach_last_name"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="individual"/>
-	</field>
-	<field name="client_first_name" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="first_name"/>
-		<property name="com.jaspersoft.studio.field.label" value="client_first_name"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="individual"/>
-	</field>
-	<field name="client_last_name" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="last_name"/>
-		<property name="com.jaspersoft.studio.field.label" value="client_last_name"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="individual"/>
-	</field>
-	<field name="enrollment_created_at" class="java.time.LocalDateTime">
-		<property name="com.jaspersoft.studio.field.name" value="created_at"/>
-		<property name="com.jaspersoft.studio.field.label" value="enrollment_created_at"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="enrollment"/>
-	</field>
-	<field name="deposit_date" class="java.time.LocalDateTime">
-		<property name="com.jaspersoft.studio.field.name" value="deposit_date"/>
-		<property name="com.jaspersoft.studio.field.label" value="deposit_date"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="clientـledger"/>
-	</field>
-	<field name="session_count" class="java.lang.Integer">
-		<property name="com.jaspersoft.studio.field.name" value="session_count"/>
-		<property name="com.jaspersoft.studio.field.label" value="session_count"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="enrollment"/>
-	</field>
-	<field name="payment_amount" class="java.lang.Integer">
-		<property name="com.jaspersoft.studio.field.name" value="amount"/>
-		<property name="com.jaspersoft.studio.field.label" value="payment_amount"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="clientـledger"/>
-	</field>
-	<field name="payment_method" class="java.lang.String">
-		<property name="com.jaspersoft.studio.field.name" value="payment_method"/>
-		<property name="com.jaspersoft.studio.field.label" value="payment_method"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="clientـledger"/>
-	</field>
-	<field name="center_percentage" class="java.lang.Integer">
-		<property name="com.jaspersoft.studio.field.name" value="center_percentage"/>
-		<property name="com.jaspersoft.studio.field.label" value="center_percentage"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="enrollment"/>
-	</field>
-	<field name="coach_percentage" class="java.lang.Integer">
-		<property name="com.jaspersoft.studio.field.name" value="coach_percentage"/>
-		<property name="com.jaspersoft.studio.field.label" value="coach_percentage"/>
-		<property name="com.jaspersoft.studio.field.tree.path" value="enrollment"/>
-	</field>
-	<field name="credit_balance" class="java.lang.Integer">
-		<property name="com.jaspersoft.studio.field.name" value="credit_balance"/>
-		<property name="com.jaspersoft.studio.field.label" value="credit_balance"/>
-	</field>
-	<field name="outstanding_amount" class="java.lang.Integer">
-		<property name="com.jaspersoft.studio.field.name" value="outstanding_amount"/>
-		<property name="com.jaspersoft.studio.field.label" value="outstanding_amount"/>
-	</field>
-	<field name="center_share" class="java.math.BigDecimal">
-		<property name="com.jaspersoft.studio.field.name" value="center_share"/>
-		<property name="com.jaspersoft.studio.field.label" value="center_share"/>
-	</field>
-	<field name="coach_commission" class="java.math.BigDecimal">
-		<property name="com.jaspersoft.studio.field.name" value="coach_commission"/>
-		<property name="com.jaspersoft.studio.field.label" value="coach_commission"/>
-	</field>
-	<variable name="total_payment" calculation="Sum" class="java.lang.Integer">
-		<expression><![CDATA[$F{payment_amount}
+
+JOIN individual co
+    ON co.id = en.coach_id
+
+JOIN client cl
+    ON cl.id = en.client_id
+
+JOIN individual cli_ind
+    ON cli_ind.id = cl.id
+
+JOIN clientـledger
+ cll
+    ON cll.enrollment_id = en.id
+
+CROSS JOIN totals
+
+WHERE co.id = 2
+
+ORDER BY
+    cl.id,
+    cll.created_at ASC;]]></query>
+    <field name="coach_first_name" class="java.lang.String">
+        <property name="com.jaspersoft.studio.field.name" value="first_name"/>
+        <property name="com.jaspersoft.studio.field.label" value="coach_first_name"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="individual"/>
+    </field>
+    <field name="coach_last_name" class="java.lang.String">
+        <property name="com.jaspersoft.studio.field.name" value="last_name"/>
+        <property name="com.jaspersoft.studio.field.label" value="coach_last_name"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="individual"/>
+    </field>
+    <field name="client_first_name" class="java.lang.String">
+        <property name="com.jaspersoft.studio.field.name" value="first_name"/>
+        <property name="com.jaspersoft.studio.field.label" value="client_first_name"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="individual"/>
+    </field>
+    <field name="client_last_name" class="java.lang.String">
+        <property name="com.jaspersoft.studio.field.name" value="last_name"/>
+        <property name="com.jaspersoft.studio.field.label" value="client_last_name"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="individual"/>
+    </field>
+    <field name="enrollment_created_at" class="java.lang.String">
+        <property name="com.jaspersoft.studio.field.name" value="created_at"/>
+        <property name="com.jaspersoft.studio.field.label" value="enrollment_created_at"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="enrollment"/>
+    </field>
+    <field name="deposit_date" class="java.lang.String">
+        <property name="com.jaspersoft.studio.field.name" value="deposit_date"/>
+        <property name="com.jaspersoft.studio.field.label" value="deposit_date"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="clientـledger"/>
+    </field>
+    <field name="session_count" class="java.lang.Integer">
+        <property name="com.jaspersoft.studio.field.name" value="session_count"/>
+        <property name="com.jaspersoft.studio.field.label" value="session_count"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="enrollment"/>
+    </field>
+    <field name="payment_amount" class="java.lang.Integer">
+        <property name="com.jaspersoft.studio.field.name" value="amount"/>
+        <property name="com.jaspersoft.studio.field.label" value="payment_amount"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="clientـledger"/>
+    </field>
+    <field name="payment_method" class="java.lang.String">
+        <property name="com.jaspersoft.studio.field.name" value="payment_method"/>
+        <property name="com.jaspersoft.studio.field.label" value="payment_method"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="clientـledger"/>
+    </field>
+    <field name="center_percentage" class="java.lang.Integer">
+        <property name="com.jaspersoft.studio.field.name" value="center_percentage"/>
+        <property name="com.jaspersoft.studio.field.label" value="center_percentage"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="enrollment"/>
+    </field>
+    <field name="coach_percentage" class="java.lang.Integer">
+        <property name="com.jaspersoft.studio.field.name" value="coach_percentage"/>
+        <property name="com.jaspersoft.studio.field.label" value="coach_percentage"/>
+        <property name="com.jaspersoft.studio.field.tree.path" value="enrollment"/>
+    </field>
+    <field name="credit_balance" class="java.lang.Long">
+        <property name="com.jaspersoft.studio.field.name" value="credit_balance"/>
+        <property name="com.jaspersoft.studio.field.label" value="credit_balance"/>
+    </field>
+    <field name="outstanding_amount" class="java.lang.Long">
+        <property name="com.jaspersoft.studio.field.name" value="outstanding_amount"/>
+        <property name="com.jaspersoft.studio.field.label" value="outstanding_amount"/>
+    </field>
+    <field name="center_share" class="java.math.BigDecimal">
+        <property name="com.jaspersoft.studio.field.name" value="center_share"/>
+        <property name="com.jaspersoft.studio.field.label" value="center_share"/>
+    </field>
+    <field name="coach_commission" class="java.math.BigDecimal">
+        <property name="com.jaspersoft.studio.field.name" value="coach_commission"/>
+        <property name="com.jaspersoft.studio.field.label" value="coach_commission"/>
+    </field>
+    <field name="total_outstanding_amount" class="java.math.BigDecimal">
+        <property name="com.jaspersoft.studio.field.name" value="total_outstanding_amount"/>
+        <property name="com.jaspersoft.studio.field.label" value="total_outstanding_amount"/>
+    </field>
+    <field name="total_credit_balance" class="java.math.BigDecimal">
+        <property name="com.jaspersoft.studio.field.name" value="total_credit_balance"/>
+        <property name="com.jaspersoft.studio.field.label" value="total_credit_balance"/>
+    </field>
+    <variable name="total_payment" calculation="Sum" class="java.lang.Integer">
+        <expression><![CDATA[$F{payment_amount}
 ]]></expression>
-	</variable>
-	<variable name="total_center_share" calculation="Sum" class="java.lang.Integer">
-		<expression><![CDATA[$F{center_share}]]></expression>
-	</variable>
-	<variable name="total_outstanding_amount" calculation="Sum" class="java.lang.Integer">
-		<expression><![CDATA[$F{outstanding_amount}]]></expression>
-	</variable>
-	<variable name="total_credit_balance" calculation="Sum" class="java.lang.Integer">
-		<expression><![CDATA[$F{credit_balance}]]></expression>
-	</variable>
-	<variable name="total_coach_commission" calculation="Sum" class="java.lang.Integer">
-		<expression><![CDATA[$F{coach_commission}]]></expression>
-	</variable>
-	<background splitType="Stretch"/>
-	<title height="47" splitType="Stretch">
-		<element kind="staticText" uuid="f91c6b2c-02bf-4221-97bd-3f1d6487816b" x="0" y="7" width="842" height="30" fontSize="20.0" hTextAlign="Center" vTextAlign="Middle">
-			<text><![CDATA[گزارش حساب مشتری در مرکز تناسب برتر]]></text>
-			<property name="com.jaspersoft.studio.unit.width" value="px"/>
-			<property name="com.jaspersoft.studio.unit.y" value="px"/>
-		</element>
-		<property name="com.jaspersoft.studio.unit.height" value="px"/>
-	</title>
-	<pageHeader height="65" splitType="Stretch">
-		<element kind="staticText" uuid="5a70392c-ab75-4587-8f9b-03fa22014233" x="0" y="10" width="122" height="30" bold="true" hTextAlign="Right" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[نام استاد : ]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.y" value="px"/>
-		</element>
-		<element kind="textField" uuid="92ea3589-93e2-40f5-954c-218f26dfcfe4" x="122" y="10" width="128" height="30" hTextAlign="Right" vTextAlign="Middle">
-			<expression><![CDATA[$F{coach_first_name}+" "+$F{coach_last_name}]]></expression>
-			<property name="com.jaspersoft.studio.unit.y" value="px"/>
-		</element>
-		<element kind="staticText" uuid="5de23c81-ceb7-43f3-943d-d8fdeb61d180" x="474" y="10" width="116" height="30" bold="true" hTextAlign="Right" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="10" spacingBefore="0"/>
-			<text><![CDATA[تاریخ شروع : ]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-		</element>
-		<element kind="textField" uuid="f1a9ef18-31e1-4dd8-84a7-ebd839561b65" x="590" y="10" width="84" height="30" bold="false" hTextAlign="Right" vTextAlign="Middle">
-			<expression><![CDATA[$P{startDate}]]></expression>
-		</element>
-		<element kind="staticText" uuid="0dfb5cad-f77c-4f86-84e8-251e25bd05d9" x="674" y="10" width="84" height="30" bold="true" hTextAlign="Right" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="10" spacingBefore="0"/>
-			<text><![CDATA[تاریخ پایان : ]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-		</element>
-		<element kind="textField" uuid="aaf0139d-0d0f-413c-b565-9dce448df5e8" x="758" y="10" width="84" height="30" bold="false" hTextAlign="Right" vTextAlign="Middle">
-			<expression><![CDATA[$P{endDate}]]></expression>
-		</element>
-		<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.FreeLayout"/>
-		<property name="com.jaspersoft.studio.unit.height" value="px"/>
-	</pageHeader>
-	<columnHeader height="30" splitType="Stretch">
-		<element kind="staticText" uuid="3b871730-0554-45e3-828c-0c6b2bafe210" x="0" y="0" width="25" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<text><![CDATA[ردیف]]></text>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="62b9016a-da2f-4541-b3d0-2921e7452231" x="25" y="0" width="97" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[نام و نام خانوادگی]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="46aa2624-4b3a-44a2-9cce-caff2d2f3493" x="122" y="0" width="64" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[تاریخ ثبت نام ]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<property name="com.jaspersoft.studio.unit.width" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="35b787b8-f646-4323-97ea-822d192aae0f" x="250" y="0" width="32" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[تعداد جلسات]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="ca6b749c-4496-4d1c-9a8f-049b49e73e47" x="282" y="0" width="80" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[مبلغ واریزی]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="ba52a972-951d-438e-a6f2-87a363b70183" x="362" y="0" width="80" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[نحوه پرداخت]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="d7b69188-1ceb-4d6f-891f-5d3ab39ee18a" x="558" y="0" width="32" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[درصد مربی]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<property name="com.jaspersoft.studio.unit.width" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="875d484d-c89f-4a1f-8388-079198fb1546" x="474" y="0" width="84" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[سهم مرکز]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="4fc8b1e5-65d8-4ef2-a9c8-be9eefc477e3" x="590" y="0" width="84" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[سهم مربی]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="dcfd35f5-32fc-4bbe-980f-cffb728a13c8" x="674" y="0" width="84" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[بدهکار]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="cf61abf8-ac6c-4c4c-8c08-de4ee46882c5" x="758" y="0" width="84" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[بستانکار]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="66dcbab5-5b92-4554-8b54-89e8f2ea15c2" x="442" y="0" width="32" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[درصد مرکز]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="staticText" uuid="34f9996b-a7cc-4558-8500-51282e3446df" x="186" y="0" width="64" height="30" fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
-			<text><![CDATA[تاریخ واریز]]></text>
-			<property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
-			<property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<property name="com.jaspersoft.studio.unit.width" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<property name="com.jaspersoft.studio.unit.height" value="px"/>
-	</columnHeader>
-	<detail>
-		<band height="20" splitType="Stretch">
-			<element kind="textField" uuid="92826729-510d-457b-8dd1-9d7a0ffc4e03" x="0" y="0" width="25" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[$V{REPORT_COUNT}]]></expression>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="dcd2b235-e36d-4cb6-8d0c-5d7bc684abee" x="25" y="0" width="97" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[$F{client_first_name}+" "+$F{client_last_name}]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="b732d6c5-285b-45be-ba1d-b5dd232cdb2a"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="fb95d502-01db-4b8d-b138-6f8a589db419" x="122" y="0" width="64" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[$F{enrollment_created_at}]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="b182b576-bbd9-41fe-96df-53d357bb52b8"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="894daba8-7f24-402d-97c0-d4662b24012a" x="250" y="0" width="32" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[16]]></expression>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="f38f06fe-cf66-446f-aee8-6b321d8f7f22" x="362" y="0" width="80" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[   "CARD_TO_CARD".equals($F{payment_method}) ? "کارت به کارت" :
+    </variable>
+    <variable name="total_center_share" calculation="Sum" class="java.lang.Integer">
+        <expression><![CDATA[$F{center_share}]]></expression>
+    </variable>
+    <variable name="total_outstanding_amount"
+              calculation="Sum"
+              class="java.lang.Long">
+
+        <expression><![CDATA[
+        $F{outstanding_amount} == null
+            ? 0L
+            : Math.abs($F{outstanding_amount})
+    ]]></expression>
+
+    </variable>
+
+    <variable name="total_credit_balance"
+              calculation="Sum"
+              class="java.lang.Long">
+
+        <expression><![CDATA[
+        $F{credit_balance} == null
+            ? 0L
+            : $F{credit_balance}
+    ]]></expression>
+
+    </variable>
+    <variable name="total_coach_commission" calculation="Sum" class="java.lang.Integer">
+        <expression><![CDATA[$F{coach_commission}]]></expression>
+    </variable>
+    <background splitType="Stretch"/>
+    <title height="70" splitType="Stretch">
+        <element kind="staticText" uuid="f91c6b2c-02bf-4221-97bd-3f1d6487816b" x="0" y="7" width="842" height="60"
+                 fontSize="20.0" hTextAlign="Center" vTextAlign="Middle">
+            <text><![CDATA[گزارش حساب مشتری در مرکز تناسب برتر]]></text>
+            <property name="com.jaspersoft.studio.unit.width" value="px"/>
+            <property name="com.jaspersoft.studio.unit.y" value="px"/>
+        </element>
+        <property name="com.jaspersoft.studio.unit.height" value="px"/>
+    </title>
+    <pageHeader height="65" splitType="Stretch">
+        <element kind="staticText" uuid="5a70392c-ab75-4587-8f9b-03fa22014233" x="0" y="10" width="122" height="40"
+                 bold="true" hTextAlign="Right" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[نام استاد : ]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.y" value="px"/>
+        </element>
+        <element kind="textField" uuid="92ea3589-93e2-40f5-954c-218f26dfcfe4" x="122" y="10" width="128" height="40"
+                 hTextAlign="Right" vTextAlign="Middle">
+            <expression><![CDATA[$F{coach_first_name}+" "+$F{coach_last_name}]]></expression>
+            <property name="com.jaspersoft.studio.unit.y" value="px"/>
+        </element>
+        <element kind="staticText" uuid="5de23c81-ceb7-43f3-943d-d8fdeb61d180" x="474" y="10" width="116" height="40"
+                 bold="true" hTextAlign="Right" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="10" spacingBefore="0"/>
+            <text><![CDATA[تاریخ شروع : ]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+        </element>
+        <element kind="textField" uuid="f1a9ef18-31e1-4dd8-84a7-ebd839561b65" x="590" y="10" width="84" height="40"
+                 bold="false" hTextAlign="Right" vTextAlign="Middle">
+            <expression>
+                <![CDATA[com.tanasobbartar.converter.DateConverter.gregorianDateToJalali($P{startDate})]]></expression>
+        </element>
+        <element kind="staticText" uuid="0dfb5cad-f77c-4f86-84e8-251e25bd05d9" x="674" y="10" width="84" height="40"
+                 bold="true" hTextAlign="Right" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="10" spacingBefore="0"/>
+            <text><![CDATA[تاریخ پایان : ]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+        </element>
+        <element kind="textField" uuid="aaf0139d-0d0f-413c-b565-9dce448df5e8" x="758" y="10" width="84" height="40"
+                 bold="false" hTextAlign="Right" vTextAlign="Middle">
+            <expression>
+                <![CDATA[com.tanasobbartar.converter.DateConverter.gregorianDateToJalali($P{endDate})]]></expression>
+        </element>
+        <property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.FreeLayout"/>
+        <property name="com.jaspersoft.studio.unit.height" value="px"/>
+    </pageHeader>
+    <columnHeader height="30" splitType="Stretch">
+        <element kind="staticText" uuid="3b871730-0554-45e3-828c-0c6b2bafe210" x="0" y="0" width="25" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <text><![CDATA[ردیف]]></text>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="62b9016a-da2f-4541-b3d0-2921e7452231" x="25" y="0" width="97" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[نام و نام خانوادگی]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="46aa2624-4b3a-44a2-9cce-caff2d2f3493" x="122" y="0" width="64" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[تاریخ ثبت نام ]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <property name="com.jaspersoft.studio.unit.width" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="35b787b8-f646-4323-97ea-822d192aae0f" x="250" y="0" width="32" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[تعداد جلسات]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="ca6b749c-4496-4d1c-9a8f-049b49e73e47" x="282" y="0" width="80" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[مبلغ واریزی]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="ba52a972-951d-438e-a6f2-87a363b70183" x="362" y="0" width="80" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[نحوه پرداخت]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="d7b69188-1ceb-4d6f-891f-5d3ab39ee18a" x="558" y="0" width="32" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[درصد مربی]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <property name="com.jaspersoft.studio.unit.width" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="875d484d-c89f-4a1f-8388-079198fb1546" x="474" y="0" width="84" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[سهم مرکز]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="4fc8b1e5-65d8-4ef2-a9c8-be9eefc477e3" x="590" y="0" width="84" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[سهم مربی]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="dcfd35f5-32fc-4bbe-980f-cffb728a13c8" x="674" y="0" width="84" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[بدهکار]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="cf61abf8-ac6c-4c4c-8c08-de4ee46882c5" x="758" y="0" width="84" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[بستانکار]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="66dcbab5-5b92-4554-8b54-89e8f2ea15c2" x="442" y="0" width="32" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[درصد مرکز]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="staticText" uuid="34f9996b-a7cc-4558-8500-51282e3446df" x="186" y="0" width="64" height="30"
+                 fontSize="8.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <paragraph leftIndent="0" rightIndent="0" spacingBefore="0"/>
+            <text><![CDATA[تاریخ واریز]]></text>
+            <property name="com.jaspersoft.studio.unit.leftIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.rightIndent" value="px"/>
+            <property name="com.jaspersoft.studio.unit.spacingBefore" value="px"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <property name="com.jaspersoft.studio.unit.width" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <property name="com.jaspersoft.studio.unit.height" value="px"/>
+    </columnHeader>
+    <detail>
+        <band height="20" splitType="Stretch">
+            <element kind="textField" uuid="92826729-510d-457b-8dd1-9d7a0ffc4e03" x="0" y="0" width="25" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[$V{REPORT_COUNT}]]></expression>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="dcd2b235-e36d-4cb6-8d0c-5d7bc684abee" x="25" y="0" width="97" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[$F{client_first_name}+" "+$F{client_last_name}]]></expression>
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="b732d6c5-285b-45be-ba1d-b5dd232cdb2a"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="fb95d502-01db-4b8d-b138-6f8a589db419" x="122" y="0" width="64" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression>
+                    <![CDATA[com.tanasobbartar.converter.DateConverter.gregorianDateToJalali($F{enrollment_created_at})]]></expression>
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="b182b576-bbd9-41fe-96df-53d357bb52b8"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="894daba8-7f24-402d-97c0-d4662b24012a" x="250" y="0" width="32" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[16]]></expression>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="f38f06fe-cf66-446f-aee8-6b321d8f7f22" x="362" y="0" width="80" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[   "CARD_TO_CARD".equals($F{payment_method}) ? "کارت به کارت" :
    "CASH".equals($F{payment_method})        ? "نقدی" :
    "POS".equals($F{payment_method})         ? "دستگاه کارتخوان" :
    ($F{payment_method} == null)             ? "ثبت نام" :
                                               $F{payment_method}
 ]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="aa776177-ed24-4b80-b732-12b0b71afe08"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="87c1bafd-6760-4cb2-8cc1-df862e86470d" x="282" y="0" width="80" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[new java.text.DecimalFormat("#,###").format($F{payment_amount})
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="aa776177-ed24-4b80-b732-12b0b71afe08"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="87c1bafd-6760-4cb2-8cc1-df862e86470d" x="282" y="0" width="80" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[new java.text.DecimalFormat("#,###").format($F{payment_amount})
 ]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="d5d7fe1a-e976-4461-8ab6-15568a25d54d" x="442" y="0" width="32" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[$F{center_percentage}]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="4c0629fb-b77d-445d-986b-1147e675d180"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="d86261f2-8983-4591-b393-c79d789c16c3" x="558" y="0" width="32" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[$F{coach_percentage}]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="bde46e3e-c27d-43be-8bc4-7c6c66f9e6d4"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="8b7f0a98-b078-4dc3-be92-b63ef096d787" x="590" y="0" width="84" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[$F{coach_commission}==null?0:new java.text.DecimalFormat("#,###").format($F{coach_commission})
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="d5d7fe1a-e976-4461-8ab6-15568a25d54d" x="442" y="0" width="32" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[$F{center_percentage}]]></expression>
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="4c0629fb-b77d-445d-986b-1147e675d180"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="d86261f2-8983-4591-b393-c79d789c16c3" x="558" y="0" width="32" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[$F{coach_percentage}]]></expression>
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="bde46e3e-c27d-43be-8bc4-7c6c66f9e6d4"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="8b7f0a98-b078-4dc3-be92-b63ef096d787" x="590" y="0" width="84" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[$F{coach_commission}==null?0:new java.text.DecimalFormat("#,###").format($F{coach_commission})
 
 ]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="6e6ef65b-abf6-4c75-9b00-28febb448c8a"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="eda63161-7e92-453d-80a7-a3bafcf4c886" x="474" y="0" width="84" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[new java.text.DecimalFormat("#,###").format($F{center_share})
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="6e6ef65b-abf6-4c75-9b00-28febb448c8a"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="eda63161-7e92-453d-80a7-a3bafcf4c886" x="474" y="0" width="84" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[new java.text.DecimalFormat("#,###").format($F{center_share})
 ]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="4c35a159-a0fa-493c-b2d9-e242402d45be"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="6bf531fb-7299-4126-bf69-c0053c6f986c" x="674" y="0" width="84" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[$F{outstanding_amount}==null?0:new java.text.DecimalFormat("#,###").format($F{outstanding_amount})
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="4c35a159-a0fa-493c-b2d9-e242402d45be"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="6bf531fb-7299-4126-bf69-c0053c6f986c" x="674" y="0" width="84" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression><![CDATA[$F{outstanding_amount}==null?0:new java.text.DecimalFormat("#,###").format(Math.abs($F{outstanding_amount}))
 ]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="0e3f6b35-cc53-4917-aafb-b54accbf61e4"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="b3067579-cde0-4e78-8679-c51c266a9815" x="758" y="0" width="84" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[$F{credit_balance}==null?0:new java.text.DecimalFormat("#,###").format($F{credit_balance})]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="c2d2216a-12d9-4c17-a56c-b6defbfab5ab"/>
-				<property name="com.jaspersoft.studio.unit.height" value="px"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<element kind="textField" uuid="f0741b7e-c537-42ce-b101-6a44f2c22098" x="186" y="0" width="64" height="20" hTextAlign="Center" vTextAlign="Middle">
-				<expression><![CDATA[$F{deposit_date}==null?"":$F{deposit_date}]]></expression>
-				<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="0ff06e18-4dda-4a8a-82ca-db5ae56a3ab5"/>
-				<box>
-					<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-					<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				</box>
-			</element>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.FreeLayout"/>
-		</band>
-	</detail>
-	<summary height="20">
-		<element kind="textField" uuid="c2f76a80-8296-46f2-a87e-856261b08ca7" x="282" y="0" width="80" height="20" hTextAlign="Center" vTextAlign="Middle">
-			<expression><![CDATA[new java.text.DecimalFormat("#,###").format($V{total_payment})
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="0e3f6b35-cc53-4917-aafb-b54accbf61e4"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="b3067579-cde0-4e78-8679-c51c266a9815" x="758" y="0" width="84" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression>
+                    <![CDATA[$F{credit_balance}==null?0:new java.text.DecimalFormat("#,###").format($F{credit_balance})]]></expression>
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="c2d2216a-12d9-4c17-a56c-b6defbfab5ab"/>
+                <property name="com.jaspersoft.studio.unit.height" value="px"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <element kind="textField" uuid="f0741b7e-c537-42ce-b101-6a44f2c22098" x="186" y="0" width="64" height="20"
+                     hTextAlign="Center" vTextAlign="Middle">
+                <expression>
+                    <![CDATA[$F{deposit_date}==null?"":com.tanasobbartar.converter.DateConverter.gregorianDateToJalali($F{deposit_date})]]></expression>
+                <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                          value="0ff06e18-4dda-4a8a-82ca-db5ae56a3ab5"/>
+                <box>
+                    <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                    <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                </box>
+            </element>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <property name="com.jaspersoft.studio.layout" value="com.jaspersoft.studio.editor.layout.FreeLayout"/>
+        </band>
+    </detail>
+    <summary height="20">
+        <element kind="textField" uuid="c2f76a80-8296-46f2-a87e-856261b08ca7" x="282" y="0" width="80" height="20"
+                 hTextAlign="Center" vTextAlign="Middle">
+            <expression><![CDATA[new java.text.DecimalFormat("#,###").format($V{total_payment})]]></expression>
+            <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                      value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="textField" uuid="36f45539-6ee4-4404-9545-4f09f3690d7d" x="474" y="0" width="84" height="20"
+                 hTextAlign="Center" vTextAlign="Middle">
+            <expression><![CDATA[new java.text.DecimalFormat("#,###").format($V{total_center_share})]]></expression>
+            <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                      value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="textField" uuid="50a1b54c-27ab-4a7b-b70b-1d97bac65162" x="674" y="0" width="84" height="20"
+                 fontSize="12.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <expression><![CDATA[$F{total_outstanding_amount}==null?0:new java.text.DecimalFormat("#,###").format($F{total_outstanding_amount})]]></expression>
+            <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                      value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="textField" uuid="0df3bf81-3571-4f0f-9053-25fd62761eaa" x="758" y="0" width="84" height="20"
+                 fontSize="12.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
+            <expression><![CDATA[$F{total_credit_balance}==null?0:new java.text.DecimalFormat("#,###").format($F{total_credit_balance})]]></expression>
+            <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                      value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <element kind="textField" uuid="13f78fd8-707c-4ac9-ab21-807f32de5303" x="590" y="0" width="84" height="20"
+                 hTextAlign="Center" vTextAlign="Middle">
+            <expression><![CDATA[new java.text.DecimalFormat("#,###").format($V{total_coach_commission})
 ]]></expression>
-			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="textField" uuid="36f45539-6ee4-4404-9545-4f09f3690d7d" x="474" y="0" width="84" height="20" hTextAlign="Center" vTextAlign="Middle">
-			<expression><![CDATA[new java.text.DecimalFormat("#,###").format($V{total_center_share})
-]]></expression>
-			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="textField" uuid="50a1b54c-27ab-4a7b-b70b-1d97bac65162" x="674" y="0" width="84" height="20" fontSize="12.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<expression><![CDATA[$V{total_outstanding_amount}]]></expression>
-			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="textField" uuid="0df3bf81-3571-4f0f-9053-25fd62761eaa" x="758" y="0" width="84" height="20" fontSize="12.0" bold="true" hTextAlign="Center" vTextAlign="Middle">
-			<expression><![CDATA[$V{total_credit_balance}]]></expression>
-			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<element kind="textField" uuid="13f78fd8-707c-4ac9-ab21-807f32de5303" x="590" y="0" width="84" height="20" hTextAlign="Center" vTextAlign="Middle">
-			<expression><![CDATA[new java.text.DecimalFormat("#,###").format($V{total_coach_commission})
-]]></expression>
-			<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
-			<property name="com.jaspersoft.studio.unit.height" value="px"/>
-			<box>
-				<topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-				<rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
-			</box>
-		</element>
-		<property name="com.jaspersoft.studio.unit.height" value="px"/>
-	</summary>
+            <property name="com.jaspersoft.studio.spreadsheet.connectionID"
+                      value="920a917c-0a0f-4114-855a-233fdb101e4c"/>
+            <property name="com.jaspersoft.studio.unit.height" value="px"/>
+            <box>
+                <topPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <leftPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <bottomPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+                <rightPen lineWidth="1.0" lineStyle="Solid" lineColor="#000000"/>
+            </box>
+        </element>
+        <property name="com.jaspersoft.studio.unit.height" value="px"/>
+    </summary>
 </jasperReport>
